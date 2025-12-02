@@ -15,7 +15,6 @@ mongoose
   .then(() => console.log("MongoDB Connected"))
   .catch((err) => console.log("DB Error:", err));
 
-
 // ----------------------
 // SIMPLE Course Schema
 // ----------------------
@@ -27,13 +26,11 @@ const courseSchema = new mongoose.Schema({
   category: String,
   syllabus: String,
   batch: String,
-  thumbnail: String,        // NEW
-  lessons: [String],        // NEW (video links, each = 1 lesson)
+  thumbnail: String, // NEW
+  lessons: [String], // NEW (video links, each = 1 lesson)
 });
 
-
 const Course = mongoose.model("Course", courseSchema);
-
 
 // ----------------------
 // POST API → Add Course
@@ -69,7 +66,6 @@ app.get("/courses", async (req, res) => {
   }
 });
 
-
 // ----------------------
 // GET API → Get Single Course by ID
 // ----------------------
@@ -94,7 +90,53 @@ app.get("/course/:id", async (req, res) => {
   }
 });
 
+// Update a course by ID (with lessons )
+app.put("/course/:id", async (req, res) => {
+  try {
+    const id = req.params.id;
+    const updateData = req.body; // with lessons array 
 
+    const updatedCourse = await Course.findByIdAndUpdate(
+      id,
+      { $set: updateData },
+      { new: true }
+    );
+
+    if (!updatedCourse) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Course not found" });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "Course updated successfully",
+      course: updatedCourse,
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+// Delete a course by ID
+app.delete("/course/:id", async (req, res) => {
+  try {
+    const id = req.params.id;
+
+    const deletedCourse = await Course.findByIdAndDelete(id);
+
+    if (!deletedCourse) {
+      return res.status(404).json({ success: false, message: "Course not found" });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "Course deleted successfully",
+      course: deletedCourse,
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 
 // ----------------------
 // Basic test route
