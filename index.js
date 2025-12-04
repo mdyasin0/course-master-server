@@ -1,8 +1,8 @@
+require("dotenv").config();
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
 const bcrypt = require("bcryptjs");
-require("dotenv").config();
 
 const app = express();
 app.use(cors());
@@ -13,8 +13,8 @@ app.use(express.json());
 // ----------------------
 mongoose
   .connect(process.env.MONGO_URI)
-  .then(() => console.log("MongoDB Connected"))
-  .catch((err) => console.log("DB Error:", err));
+  // .then(() => console.log("MongoDB Connected"))
+  // .catch((err) => console.log("DB Error:", err));
 
 // ----------------------
 // COURSE SCHEMA
@@ -231,7 +231,7 @@ app.post("/enroll/manual", async (req, res) => {
       message: "Enrollment submitted! Waiting for admin approval.",
     });
   } catch (err) {
-    console.error(err);
+    // console.error(err);
     res.status(500).json({ message: "Something went wrong" });
   }
 });
@@ -340,7 +340,7 @@ app.get("/enrollments/user/:email", async (req, res) => {
       blocked,
     });
   } catch (err) {
-    console.error(err);
+    // console.error(err);
     res.status(500).json({ success: false, message: err.message });
   }
 });
@@ -361,7 +361,7 @@ app.get("/user/enrolled-courses/:email", async (req, res) => {
 
     res.status(200).json({ success: true, total: courses.length, courses });
   } catch (err) {
-    console.error(err);
+    // console.error(err);
     res.status(500).json({ success: false, message: err.message });
   }
 });
@@ -397,7 +397,7 @@ app.get("/user/enrollments-with-courses/:email", async (req, res) => {
 
     res.status(200).json({ success: true, total: combined.length, combined });
   } catch (err) {
-    console.error(err);
+    // console.error(err);
     res.status(500).json({ success: false, message: err.message });
   }
 });
@@ -458,7 +458,7 @@ app.post("/assignment/submit", async (req, res) => {
 
     res.status(201).json({ success: true, message: "Assignment submitted!" });
   } catch (err) {
-    console.error(err);
+    // console.error(err);
     res.status(500).json({ success: false, message: err.message });
   }
 });
@@ -472,7 +472,7 @@ app.get("/assignment/submissions", async (req, res) => {
       .status(200)
       .json({ success: true, total: submissions.length, submissions });
   } catch (err) {
-    console.error(err);
+    // console.error(err);
     res.status(500).json({ success: false, message: err.message });
   }
 });
@@ -503,7 +503,72 @@ app.put("/assignment/complete/:id", async (req, res) => {
       message: "Assignment and enrollment marked as complete!",
     });
   } catch (err) {
-    console.error(err);
+    // console.error(err);
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+// ----------------------
+// GET ALL USERS
+// ----------------------
+app.get("/users", async (req, res) => {
+  try {
+    const users = await Users.find().sort({ registeredAt: -1 });
+    res.status(200).json({ success: true, total: users.length, users });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+// ----------------------
+// UPDATE USER ROLE
+// ----------------------
+app.put("/users/update-role/:id", async (req, res) => {
+  try {
+    const { role } = req.body;
+
+    if (!["admin", "student"].includes(role)) {
+      return res.status(400).json({ success: false, message: "Invalid role!" });
+    }
+
+    const updatedUser = await Users.findByIdAndUpdate(
+      req.params.id,
+      { role },
+      { new: true }
+    );
+
+    if (!updatedUser)
+      return res
+        .status(404)
+        .json({ success: false, message: "User not found" });
+
+    res.status(200).json({
+      success: true,
+      message: "Role updated successfully!",
+      user: updatedUser,
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// by email user data
+app.get("/user", async (req, res) => {
+  const email = req.query.email;
+
+  if (!email) {
+    return res
+      .status(400)
+      .json({ success: false, message: "Email is required" });
+  }
+
+  try {
+    const user = await Users.findOne({ email });
+    if (!user) {
+      return res
+        .status(404)
+        .json({ success: false, message: "User not found" });
+    }
+    res.status(200).json({ success: true, user });
+  } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }
 });
@@ -511,5 +576,5 @@ app.put("/assignment/complete/:id", async (req, res) => {
 // ----------------------
 // SERVER START
 // ----------------------
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+// const PORT = process.env.PORT || 5000;
+// app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
